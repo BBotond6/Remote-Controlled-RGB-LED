@@ -111,6 +111,27 @@ byte GreenLedValue;
 
 byte illuminate;
 
+//Memory protection
+uint8_t CRC_8_TABLE[256] =
+{
+      0, 94,188,226, 97, 63,221,131,194,156,126, 32,163,253, 31, 65,
+    157,195, 33,127,252,162, 64, 30, 95,  1,227,189, 62, 96,130,220,
+     35,125,159,193, 66, 28,254,160,225,191, 93,  3,128,222, 60, 98,
+    190,224,  2, 92,223,129, 99, 61,124, 34,192,158, 29, 67,161,255,
+     70, 24,250,164, 39,121,155,197,132,218, 56,102,229,187, 89,  7,
+    219,133,103, 57,186,228,  6, 88, 25, 71,165,251,120, 38,196,154,
+    101, 59,217,135,  4, 90,184,230,167,249, 27, 69,198,152,122, 36,
+    248,166, 68, 26,153,199, 37,123, 58,100,134,216, 91,  5,231,185,
+    140,210, 48,110,237,179, 81, 15, 78, 16,242,172, 47,113,147,205,
+     17, 79,173,243,112, 46,204,146,211,141,111, 49,178,236, 14, 80,
+    175,241, 19, 77,206,144,114, 44,109, 51,209,143, 12, 82,176,238,
+     50,108,142,208, 83, 13,239,177,240,174, 76, 18,145,207, 45,115,
+    202,148,118, 40,171,245, 23, 73,  8, 86,180,234,105, 55,213,139,
+     87,  9,235,181, 54,104,138,212,149,203, 41,119,244,170, 72, 22,
+    233,183, 85, 11,136,214, 52,106, 43,117,151,201, 74, 20,246,168,
+    116, 42,200,150, 21, 75,169,247,182,232, 10, 84,215,137,107, 53
+};
+
 //Configuration and initialization.
 void setup()
 {
@@ -138,7 +159,7 @@ void setup()
     digitalWrite(BlueLed, HIGH);
     digitalWrite(GreenLed, HIGH);
 
-    OnOffButtonState = FALSE;
+    OnOffButtonState = TRUE;
     SaveButtonState = FALSE;
     LoadButtonState = FALSE;
     
@@ -151,7 +172,26 @@ void setup()
     GreenLedValue = 0;
 
     illuminate = 0;
+
+    LoadLedFromEEPROM(1, &RedLedValue, &GreenLedValue, &BlueLedValue);
 }
+
+//Memory protection
+
+uint8_t Calc_CRC_8(uint8_t  DataArray[], uint16_t Length)
+{
+    uint16_t i;
+    uint8_t CRC;
+
+    CRC = 0;
+    for (i = 0; i < Length; i++)
+        CRC = CRC_8_TABLE[CRC ^ DataArray[i]];
+
+    return CRC;
+}
+
+
+
 
 /////////////////////////////////////Remote signal process
 byte decoding(unsigned long* p_gap_length, byte * p_code_byte)
@@ -281,7 +321,7 @@ void OnOffButtonEvent() {
         LoadButtonState = FALSE;
     }
     else {
-        LoadLedFromEEPROM(1, &RedLedValue, &GreenLedValue, &BlueLedValue);
+        //LoadLedFromEEPROM(1, &RedLedValue, &GreenLedValue, &BlueLedValue);
     }
 }
 
@@ -320,6 +360,8 @@ void SaveLedToEEPROM(byte address, byte redled, byte greenled, byte blueled) {
         EEPROM.write(address, redled);
         EEPROM.write(address + 1, greenled);
         EEPROM.write(address + 2, blueled);
+        byte protec[] = { redled,greenled,blueled };
+        EEPROM.write(address + 3, Calc_CRC_8(protec, 3));
     }
 }
 
@@ -327,28 +369,28 @@ void LoadLedFromEEPROM(byte address ,byte* redled, byte* greenled, byte* blueled
     *redled = EEPROM.read(address);
     *greenled = EEPROM.read(address + 1);
     *blueled = EEPROM.read(address + 2);
+    byte saved_protec= EEPROM.read(address + 3);
+    byte protec[] = { *redled,*greenled,*blueled };
+    byte calc_protec = Calc_CRC_8(protec, 3);
 
-    //Memory check and repair
-    if (*redled < 0 || *redled > 250 || *greenled < 0 || *greenled > 250 || *blueled < 0 || *blueled > 250) {
-        if (address == 1) {
-            *redled = LedDefaultValue;
-            *greenled = FALSE;
-            *blueled = FALSE;
+    //Memory protection
+        if (saved_protec != calc_protec) {
+            if (address == 1) {
+                RedLedValue = LedDefaultValue;
+                BlueLedValue = FALSE;
+                GreenLedValue = FALSE;
+            }else if (address == 5) {
+                RedLedValue = FALSE;
+                BlueLedValue = FALSE;
+                GreenLedValue = LedDefaultValue;
+            }
+            else {
+                RedLedValue = FALSE;
+                BlueLedValue = LedDefaultValue;
+                GreenLedValue = FALSE;
+            }
+            SaveLedToEEPROM(address, *redled, *greenled, *blueled);
         }
-        else if (address == 4) {
-            *redled = FALSE;
-            *greenled = LedDefaultValue;
-            *blueled = FALSE;
-        }
-        else if (address == 7) {
-            *redled = FALSE;
-            *greenled = FALSE;
-            *blueled = LedDefaultValue;
-        }
-        EEPROM.write(address, *redled);
-        EEPROM.write(address + 1, *greenled);
-        EEPROM.write(address + 2, *blueled);
-    }
 }
 
 void ButtonEventManager(byte button) {
@@ -361,12 +403,12 @@ void ButtonEventManager(byte button) {
         if (button == SAVE_BUTTON && SaveButtonState == FALSE) {
             SaveButtonState = TRUE;
             LoadButtonState = FALSE;
-            SetLedStates(FALSE); Serial.println("--------------------------1111111");
+            SetLedStates(FALSE);
         }
         else if (button == LOAD_BUTTON && LoadButtonState == FALSE) {
             SaveButtonState = FALSE;
             LoadButtonState = TRUE;
-            SetLedStates(FALSE); Serial.println("--------------------------2222222");
+            SetLedStates(FALSE); 
         }
         else if (SaveButtonState == FALSE && LoadButtonState == FALSE) {
             if (button == RED_BUTTON) {
@@ -387,40 +429,34 @@ void ButtonEventManager(byte button) {
         }
         else if (SaveButtonState == TRUE && LoadButtonState == FALSE) {
             if (button == OneButton) {
-                Serial.println("--------------------------One button Save");
                 SaveLedToEEPROM(1, RedLedValue, GreenLedValue, BlueLedValue);
                 LoadButtonState = FALSE;
                 SaveButtonState = FALSE;
             }
             else if (button == TwoButton) {
-                Serial.println("--------------------------Two button Save");
-                SaveLedToEEPROM(4, RedLedValue, GreenLedValue, BlueLedValue);
+                SaveLedToEEPROM(5, RedLedValue, GreenLedValue, BlueLedValue);
                 LoadButtonState = FALSE;
                 SaveButtonState = FALSE;
             }
             else if (button == ThreeButton) {
-                Serial.println("--------------------------Three button Save");
-                SaveLedToEEPROM(7, RedLedValue, GreenLedValue, BlueLedValue);
+                SaveLedToEEPROM(9, RedLedValue, GreenLedValue, BlueLedValue);
                 LoadButtonState = FALSE;
                 SaveButtonState = FALSE;
             }
         }
         else if (SaveButtonState == FALSE && LoadButtonState == TRUE) {
             if (button == OneButton) {
-                Serial.println("--------------------------One button Load");
                 LoadLedFromEEPROM(1, &RedLedValue, &GreenLedValue, &BlueLedValue);
                 LoadButtonState = FALSE;
                 SaveButtonState = FALSE;
             }
             else if (button == TwoButton) {
-                Serial.println("--------------------------Two button Load");
-                LoadLedFromEEPROM(4, &RedLedValue, &GreenLedValue, &BlueLedValue);
+                LoadLedFromEEPROM(5, &RedLedValue, &GreenLedValue, &BlueLedValue);
                 LoadButtonState = FALSE;
                 SaveButtonState = FALSE;
             }
             else if (button == ThreeButton) {
-                Serial.println("--------------------------Three button Load");
-                LoadLedFromEEPROM(7, &RedLedValue, &GreenLedValue, &BlueLedValue);
+                LoadLedFromEEPROM(9, &RedLedValue, &GreenLedValue, &BlueLedValue);
                 LoadButtonState = FALSE;
                 SaveButtonState = FALSE;
             }
@@ -464,28 +500,7 @@ void loop()
 {
     byte CurrentButton= GetRemoteSignal();
 
-    if (CurrentButton != 0) {
-        Serial.println(CurrentButton, HEX);
-        Serial.println("");
-        Serial.println("---------------------");
-        Serial.print("Red led: ");
-        Serial.println(RedLedState, DEC);
-        Serial.print("Green led: ");
-        Serial.println(GreenLedState, DEC);
-        Serial.print("Blue led: ");
-        Serial.println(BlueLedState, DEC);
-        Serial.println("");
-        Serial.print("Red led value: ");
-        Serial.println(RedLedValue, DEC);
-        Serial.print("Green led value: ");
-        Serial.println(GreenLedValue, DEC);
-        Serial.print("Blue value: ");
-        Serial.println(BlueLedValue, DEC);
-        Serial.println("");
-    }
-
     ButtonEventManager(CurrentButton);
-
     Illumination();
-
+    
 }
