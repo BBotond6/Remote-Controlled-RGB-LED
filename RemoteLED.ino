@@ -31,7 +31,7 @@
 //                                                   {0xA4 , "-/--"},
 //                                                   {0x84 , "ok"},
 //                                                   {0x01 , "^"},
-//                                                   {0x81 , "¡"},
+//                                                   {0x81 , "ï¿½"},
 //                                                   {0xB2 , ">"},
 //                                                   {0x8A , "<"},
 //                                                   {0x98 , "red<<"},
@@ -78,24 +78,46 @@ unsigned long timestamp_reception;      //Timestamp for the beginning of the rec
 
 unsigned long gap_length[NUM_OF_GAPS];      //Time values of the gap lengths in microseconds.    
 
-#define RED_BUTTON 0x98     //Red button code
-#define GREEN_BUTTON 0x28   //Green button code
-#define BLUE_BUTTON 0xC8    //Blue button code
-#define ON_OFF_BUTTON 0x48  //On-Off button code
-#define SAVE_BUTTON 0x84    //OK button code
-#define LOAD_BUTTON 0XE7    //AV button code
-#define CH_UP_BUTTON 0x24   //P+ button code
-#define CH_DOWN_BUTTON 0xC4 //P- button code
-#define OneButton 0x80      //1 button code
-#define TwoButton 0x40      //2 button code
-#define ThreeButton 0xC0    //3 button code
+// 1 is the basic led strip remote controller with 24 button
+// 2 is my TV remote controller
+#define REMOTE_CONTROLLER 1
 
+#if REMOTE_CONTROLLER == 1
+    #define RED_BUTTON 0x20     //RED button
+    #define GREEN_BUTTON 0xA0   //GREEN button
+    #define BLUE_BUTTON 0x60    //BLUE button
+    #define ON_OFF_BUTTON 0xC0  //ON button
+    #define SAVE_BUTTON 0xE0    //W button
+    #define LOAD_BUTTON 0XD0    //FLASH button
+    #define CH_UP_BUTTON 0x40   //OFF button
+    #define CH_DOWN_BUTTON 0x80 //Ë‡ button
+    #define OneButton 0x10      //R-1
+    #define TwoButton 0x90      //G-1
+    #define ThreeButton 0x50    //B-1
+#elif REMOTE_CONTROLLER == 2
+    #define RED_BUTTON 0x98     //Red button code
+    #define GREEN_BUTTON 0x28   //Green button code
+    #define BLUE_BUTTON 0xC8    //Blue button code
+    #define ON_OFF_BUTTON 0x48  //On-Off button code
+    #define SAVE_BUTTON 0x84    //OK button code
+    #define LOAD_BUTTON 0XE7    //AV button code
+    #define CH_UP_BUTTON 0x24   //P+ button code
+    #define CH_DOWN_BUTTON 0xC4 //P- button code
+    #define OneButton 0x80      //1 button code
+    #define TwoButton 0x40      //2 button code
+    #define ThreeButton 0xC0    //3 button code
+#endif
 /////////////////////////////////////LED variables
 #define RedLed 9    //Red LED pin
 #define BlueLed 11  //Blue LED pin
 #define GreenLed 10 //Green LED pin
 
 #define LedDefaultValue 200 //Default value of the LEDs
+
+// Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
+// If your LED has inverse logic change the values 
+#define HIGH_LED 0
+#define LOW_LED 1
 
 byte OnOffButtonState;
 byte SaveButtonState;
@@ -155,9 +177,9 @@ void setup()
     pinMode(BlueLed, OUTPUT);
     pinMode(GreenLed, OUTPUT);
 
-    digitalWrite(RedLed, HIGH);
-    digitalWrite(BlueLed, HIGH);
-    digitalWrite(GreenLed, HIGH);
+    digitalWrite(RedLed, HIGH_LED);
+    digitalWrite(BlueLed, HIGH_LED);
+    digitalWrite(GreenLed, HIGH_LED);
 
     OnOffButtonState = TRUE;
     SaveButtonState = FALSE;
@@ -309,9 +331,9 @@ void OnOffButtonEvent() {
     if (OnOffButtonState == TRUE) {    //Off state
         SetLedStates(FALSE);
 
-        digitalWrite(RedLed, HIGH);
-        digitalWrite(GreenLed, HIGH);
-        digitalWrite(BlueLed, HIGH);
+        digitalWrite(RedLed, HIGH_LED);
+        digitalWrite(GreenLed, HIGH_LED);
+        digitalWrite(BlueLed, HIGH_LED);
 
         /*RedLedValue = FALSE;
         BlueLedValue = FALSE;
@@ -467,24 +489,24 @@ void ButtonEventManager(byte button) {
 void Illumination() {
     if (OnOffButtonState != FALSE) {
         if (illuminate < (RedLedValue / 10)) {
-            digitalWrite(RedLed, LOW);
+            digitalWrite(RedLed, LOW_LED);
         }
         else {
-            digitalWrite(RedLed, HIGH);
+            digitalWrite(RedLed, HIGH_LED);
         }
 
         if (illuminate < (BlueLedValue / 10)) {
-            digitalWrite(BlueLed, LOW);
+            digitalWrite(BlueLed, LOW_LED);
         }
         else {
-            digitalWrite(BlueLed, HIGH);
+            digitalWrite(BlueLed, HIGH_LED);
         }
 
         if (illuminate < (GreenLedValue / 10)) {
-            digitalWrite(GreenLed, LOW);
+            digitalWrite(GreenLed, LOW_LED);
         }
         else {
-            digitalWrite(GreenLed, HIGH);
+            digitalWrite(GreenLed, HIGH_LED);
         }
 
         if (illuminate != 25) {
