@@ -76,11 +76,15 @@ uint8_t STORE_BUTTONS_SIZE;
     uint8_t STORE_BUTTONS[3] = {0x80, 0x40, 0xC0};
 #endif
 /////////////////////////////////////LED variables
-#define RED_LED     9     //Red LED pin
+#define RED_LED      9    //Red LED pin
 #define BLUE_LED    11    //Blue LED pin
 #define GREEN_LED   10    //Green LED pin
 
-#define LED_DEFAULT_VALUE 200   //Default value of the LEDs
+#define LED_DEFAULT_VALUE   200                     //Default value of the LEDs
+#define MAX_LED_VALUE       250                     //Max value of the LEDs
+#define MIN_LED_VALUE         0                     //Min led value of the LEDs (0 is not illuminating)
+#define LED_STEP_VALUE       10                     //Value of one step
+#define COLOR_MIN_LED_VALUE   1                     //Min led value of the mixed colors
 
 // Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
 // If your LED has inverse logic change the values
@@ -304,27 +308,139 @@ void SetLedState(uint8_t* led)
     *led          = 1;
 }
 
+uint8_t GetActiveLedNumber()
+{
+    uint8_t ActiveLedNumber = 0;
+    if (RedLedValue != 0) {
+        ActiveLedNumber++;
+    }
+
+    if (BlueLedValue != 0) {
+        ActiveLedNumber++;
+    }
+
+    if (GreenLedValue != 0) {
+        ActiveLedNumber++;
+    }
+
+    return ActiveLedNumber;
+}
+
+uint8_t** GetActiveLedPointers(){
+    uint8_t** pointers = (uint8_t**)malloc(GetActiveLedNumber() * sizeof(uint8_t*));
+    uint8_t   index    = 0;
+
+    if (RedLedValue != 0) {
+        pointers[index] = &RedLedValue;
+        index++;
+    }
+
+    if (BlueLedValue != 0) {
+        pointers[index] = &BlueLedValue;
+        index++;
+    }
+
+    if (GreenLedValue != 0) {
+        pointers[index] = &GreenLedValue;
+        index++;
+    }
+
+    return pointers;
+}
+
+void SetOneLedValue(uint8_t* led, uint8_t mode)
+{
+    if (mode == TRUE && *led != MAX_LED_VALUE) {
+        *led += LED_STEP_VALUE;
+    }
+    else if (mode == FALSE && *led != MIN_LED_VALUE) {
+        *led -= LED_STEP_VALUE;
+    }
+}
+
+void SetColorValues(uint8_t mode)
+{
+    uint8_t   i;
+    float     ratio;
+    uint8_t   ReferenceLedValue = 0;
+    uint8_t   ReferenceIndex    = 0;
+    uint8_t** LedPointers       = GetActiveLedPointers();
+    uint8_t   ActiveLedNumber   = GetActiveLedNumber();
+
+    if (mode) {
+        for (i = 0; i < ActiveLedNumber; i++) {
+            if (*LedPointers[i] > ReferenceLedValue) {
+                ReferenceLedValue = *LedPointers[i];
+                ReferenceIndex    = i;
+            }
+        }
+
+        if (*LedPointers[ReferenceIndex] > (MAX_LED_VALUE - LED_STEP_VALUE)) {
+            ReferenceLedValue = MAX_LED_VALUE;
+        }
+        else {
+            ReferenceLedValue = *LedPointers[ReferenceIndex] + LED_STEP_VALUE;
+        }
+
+        ratio = (float)((float)ReferenceLedValue / (float)(*LedPointers[ReferenceIndex]));
+        *LedPointers[ReferenceIndex] = ReferenceLedValue;
+
+        for (i = 0; i < ActiveLedNumber; i++) {
+            if (i != ReferenceIndex) {
+                *LedPointers[i] = round((float)(*LedPointers[i]) * ratio);
+            }
+        }
+    }
+    else {
+        ReferenceLedValue = UINT8_MAX;
+        for (i = 0; i < ActiveLedNumber; i++) {
+            if (*LedPointers[i] < ReferenceLedValue) {
+                ReferenceLedValue = *LedPointers[i];
+                ReferenceIndex    = i;
+            }
+        }
+
+        if (*LedPointers[ReferenceIndex] < (COLOR_MIN_LED_VALUE + LED_STEP_VALUE)) {
+            ReferenceLedValue = COLOR_MIN_LED_VALUE;
+        }
+        else {
+            ReferenceLedValue = *LedPointers[ReferenceIndex] - LED_STEP_VALUE;
+        }
+
+        ratio = (float)((float)ReferenceLedValue / (float)(*LedPointers[ReferenceIndex]));
+        *LedPointers[ReferenceIndex] = ReferenceLedValue;
+
+        for (i = 0; i < ActiveLedNumber; i++) {
+            if (i != ReferenceIndex) {
+                *LedPointers[i] = round((float)(*LedPointers[i]) * ratio);
+            }
+        }
+    }
+
+    free(LedPointers);
+}
+
 void SetLedValue(uint8_t mode)
 {
     if (RedLedState == TRUE || BlueLedState == TRUE || GreenLedState == TRUE) {
-        uint8_t* led;
 
         if (RedLedState == TRUE) {
-            led = &RedLedValue;
+            SetOneLedValue(&RedLedValue, mode);
         }
         else if (BlueLedState == TRUE) {
-            led = &BlueLedValue;
+            SetOneLedValue(&BlueLedValue, mode);
         }
         else if (GreenLedState == TRUE) {
-            led = &GreenLedValue;
+            SetOneLedValue(&GreenLedValue, mode);
         }
-
-        if (mode == TRUE && *led != 250) {
-            *led += 10;
-        }
-        else if (mode == FALSE && *led != 0) {
-            *led -= 10;
-        }
+    }
+    else if(GetActiveLedNumber() == 1) {
+        uint8_t** ActiveLed = GetActiveLedPointers();
+        SetOneLedValue(ActiveLed[0], mode);
+        free(ActiveLed);
+    }
+    else if(GetActiveLedNumber() == 2 || GetActiveLedNumber() == 3) {
+        SetColorValues(mode);
     }
 }
 
@@ -448,21 +564,21 @@ void ButtonEventManager(uint8_t button)
 void Illumination()
 {
     if (OnOffButtonState != FALSE) {
-        if (illuminate < (RedLedValue / 10)) {
+        if (illuminate < (RedLedValue / LED_STEP_VALUE)) {
             digitalWrite(RED_LED, LOW_LED);
         }
         else {
             digitalWrite(RED_LED, HIGH_LED);
         }
 
-        if (illuminate < (BlueLedValue / 10)) {
+        if (illuminate < (BlueLedValue / LED_STEP_VALUE)) {
             digitalWrite(BLUE_LED, LOW_LED);
         }
         else {
             digitalWrite(BLUE_LED, HIGH_LED);
         }
 
-        if (illuminate < (GreenLedValue / 10)) {
+        if (illuminate < (GreenLedValue / LED_STEP_VALUE)) {
             digitalWrite(GREEN_LED, LOW_LED);
         }
         else {
