@@ -86,6 +86,8 @@ uint8_t STORE_BUTTONS_SIZE;
 #define LED_STEP_VALUE             10                     //Value of one step
 #define MIXED_COLOR_MIN_LED_VALUE  10                     //Min led value of the mixed colors
 
+#define SAVED_COLOR_SIZE    3   //Size of the saved color in bytes -1
+
 // Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
 // If your LED has inverse logic change the values
 #define HIGH_LED    0
@@ -442,41 +444,30 @@ void SetLedValue(uint8_t mode)
 void SaveLedToEEPROM(uint8_t address, uint8_t redled, uint8_t greenled, uint8_t blueled)
 {
     if (address > 0 && address <= 60) {
-        EEPROM.write(address, redled);
-        EEPROM.write(address + 1, greenled);
-        EEPROM.write(address + 2, blueled);
+        EEPROM.write(address++, redled);
+        EEPROM.write(address++, greenled);
+        EEPROM.write(address++, blueled);
         uint8_t protec[] = { redled,greenled,blueled };
-        EEPROM.write(address + 3, Calc_CRC_8(protec, 3));
+        EEPROM.write(address, Calc_CRC_8(protec, 3));
     }
 }
 
 void LoadLedFromEEPROM(uint8_t address ,uint8_t* redled, uint8_t* greenled, uint8_t* blueled)
 {
-    *redled              = EEPROM.read(address);
-    *greenled            = EEPROM.read(address + 1);
-    *blueled             = EEPROM.read(address + 2);
-    uint8_t saved_protec = EEPROM.read(address + 3);
+    *redled              = EEPROM.read(address++);
+    *greenled            = EEPROM.read(address++);
+    *blueled             = EEPROM.read(address++);
+    uint8_t saved_protec = EEPROM.read(address);
     uint8_t protec[]     = { *redled,*greenled,*blueled };
     uint8_t calc_protec  = Calc_CRC_8(protec, 3);
 
     //Memory protection
     if (saved_protec != calc_protec) {
-        if (address == 1) {
-            RedLedValue   = LED_DEFAULT_VALUE;
-            BlueLedValue  = FALSE;
-            GreenLedValue = FALSE;
-        }
-        else if (address == 5) {
-            RedLedValue   = FALSE;
-            BlueLedValue  = FALSE;
-            GreenLedValue = LED_DEFAULT_VALUE;
-        }
-        else {
-            RedLedValue   = FALSE;
-            BlueLedValue  = LED_DEFAULT_VALUE;
-            GreenLedValue = FALSE;
-        }
-        SaveLedToEEPROM(address, *redled, *greenled, *blueled);
+        RedLedValue   = LED_DEFAULT_VALUE;
+        BlueLedValue  = LED_DEFAULT_VALUE;
+        GreenLedValue = LED_DEFAULT_VALUE;
+
+        SaveLedToEEPROM(address - SAVED_COLOR_SIZE, *redled, *greenled, *blueled);
     }
 
     if (*redled != MIN_LED_VALUE && *greenled == MIN_LED_VALUE && *blueled == MIN_LED_VALUE) {
