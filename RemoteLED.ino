@@ -80,11 +80,11 @@ uint8_t STORE_BUTTONS_SIZE;
 #define BLUE_LED    11    //Blue LED pin
 #define GREEN_LED   10    //Green LED pin
 
-#define LED_DEFAULT_VALUE   200                     //Default value of the LEDs
-#define MAX_LED_VALUE       250                     //Max value of the LEDs
-#define MIN_LED_VALUE         0                     //Min led value of the LEDs (0 is not illuminating)
-#define LED_STEP_VALUE       10                     //Value of one step
-#define COLOR_MIN_LED_VALUE   1                     //Min led value of the mixed colors
+#define LED_DEFAULT_VALUE         200                     //Default value of the LEDs
+#define MAX_LED_VALUE             250                     //Max value of the LEDs
+#define MIN_LED_VALUE               0                     //Min led value of the LEDs (0 is not illuminating)
+#define LED_STEP_VALUE             10                     //Value of one step
+#define MIXED_COLOR_MIN_LED_VALUE  10                     //Min led value of the mixed colors
 
 // Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
 // If your LED has inverse logic change the values
@@ -161,9 +161,9 @@ void setup()
     SaveButtonState  = FALSE;
     LoadButtonState  = FALSE;
 
-    RedLedState   = 0;
-    BlueLedState  = 0;
-    GreenLedState = 0;
+    RedLedState   = FALSE;
+    BlueLedState  = FALSE;
+    GreenLedState = FALSE;
 
     RedLedValue   = 0;
     BlueLedValue  = 0;
@@ -302,10 +302,10 @@ void OnOffButtonEvent()
 
 void SetLedState(uint8_t* led)
 {
-    RedLedState   = 0;
-    BlueLedState  = 0;
-    GreenLedState = 0;
-    *led          = 1;
+    RedLedState   = FALSE;
+    BlueLedState  = FALSE;
+    GreenLedState = FALSE;
+    *led          = TRUE;
 }
 
 uint8_t GetActiveLedNumber()
@@ -350,8 +350,14 @@ uint8_t** GetActiveLedPointers(){
 
 void SetOneLedValue(uint8_t* led, uint8_t mode)
 {
-    if (mode == TRUE && *led != MAX_LED_VALUE) {
+    if (mode == TRUE && *led > (MAX_LED_VALUE - LED_STEP_VALUE)) {
+        *led = MAX_LED_VALUE;
+    }
+    else if (mode == TRUE && *led != MAX_LED_VALUE) {
         *led += LED_STEP_VALUE;
+    }
+    else if (mode == FALSE && *led < (MIN_LED_VALUE + LED_STEP_VALUE)) {
+        *led = MIN_LED_VALUE;
     }
     else if (mode == FALSE && *led != MIN_LED_VALUE) {
         *led -= LED_STEP_VALUE;
@@ -383,13 +389,6 @@ void SetColorValues(uint8_t mode)
         }
 
         ratio = (float)((float)ReferenceLedValue / (float)(*LedPointers[ReferenceIndex]));
-        *LedPointers[ReferenceIndex] = ReferenceLedValue;
-
-        for (i = 0; i < ActiveLedNumber; i++) {
-            if (i != ReferenceIndex) {
-                *LedPointers[i] = round((float)(*LedPointers[i]) * ratio);
-            }
-        }
     }
     else {
         ReferenceLedValue = UINT8_MAX;
@@ -400,20 +399,21 @@ void SetColorValues(uint8_t mode)
             }
         }
 
-        if (*LedPointers[ReferenceIndex] < (COLOR_MIN_LED_VALUE + LED_STEP_VALUE)) {
-            ReferenceLedValue = COLOR_MIN_LED_VALUE;
+        if (*LedPointers[ReferenceIndex] < (MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE)) {
+            ReferenceLedValue = MIXED_COLOR_MIN_LED_VALUE;
         }
         else {
             ReferenceLedValue = *LedPointers[ReferenceIndex] - LED_STEP_VALUE;
         }
 
         ratio = (float)((float)ReferenceLedValue / (float)(*LedPointers[ReferenceIndex]));
-        *LedPointers[ReferenceIndex] = ReferenceLedValue;
+    }
 
-        for (i = 0; i < ActiveLedNumber; i++) {
-            if (i != ReferenceIndex) {
-                *LedPointers[i] = round((float)(*LedPointers[i]) * ratio);
-            }
+    *LedPointers[ReferenceIndex] = ReferenceLedValue;
+
+    for (i = 0; i < ActiveLedNumber; i++) {
+        if (i != ReferenceIndex) {
+            *LedPointers[i] = round((float)(*LedPointers[i]) * ratio);
         }
     }
 
@@ -434,12 +434,7 @@ void SetLedValue(uint8_t mode)
             SetOneLedValue(&GreenLedValue, mode);
         }
     }
-    else if(GetActiveLedNumber() == 1) {
-        uint8_t** ActiveLed = GetActiveLedPointers();
-        SetOneLedValue(ActiveLed[0], mode);
-        free(ActiveLed);
-    }
-    else if(GetActiveLedNumber() == 2 || GetActiveLedNumber() == 3) {
+    else if(GetActiveLedNumber() > 1) {
         SetColorValues(mode);
     }
 }
@@ -465,24 +460,34 @@ void LoadLedFromEEPROM(uint8_t address ,uint8_t* redled, uint8_t* greenled, uint
     uint8_t calc_protec  = Calc_CRC_8(protec, 3);
 
     //Memory protection
-        if (saved_protec != calc_protec) {
-            if (address == 1) {
-                RedLedValue   = LED_DEFAULT_VALUE;
-                BlueLedValue  = FALSE;
-                GreenLedValue = FALSE;
-            }
-            else if (address == 5) {
-                RedLedValue   = FALSE;
-                BlueLedValue  = FALSE;
-                GreenLedValue = LED_DEFAULT_VALUE;
-            }
-            else {
-                RedLedValue   = FALSE;
-                BlueLedValue  = LED_DEFAULT_VALUE;
-                GreenLedValue = FALSE;
-            }
-            SaveLedToEEPROM(address, *redled, *greenled, *blueled);
+    if (saved_protec != calc_protec) {
+        if (address == 1) {
+            RedLedValue   = LED_DEFAULT_VALUE;
+            BlueLedValue  = FALSE;
+            GreenLedValue = FALSE;
         }
+        else if (address == 5) {
+            RedLedValue   = FALSE;
+            BlueLedValue  = FALSE;
+            GreenLedValue = LED_DEFAULT_VALUE;
+        }
+        else {
+            RedLedValue   = FALSE;
+            BlueLedValue  = LED_DEFAULT_VALUE;
+            GreenLedValue = FALSE;
+        }
+        SaveLedToEEPROM(address, *redled, *greenled, *blueled);
+    }
+
+    if (*redled != MIN_LED_VALUE && *greenled == MIN_LED_VALUE && *blueled == MIN_LED_VALUE) {
+        SetLedState(&RedLedState);
+    }
+    else if (*redled == MIN_LED_VALUE && *greenled != MIN_LED_VALUE && *blueled == MIN_LED_VALUE) {
+        SetLedState(&GreenLedState);
+    }
+    else if (*redled == MIN_LED_VALUE && *greenled == MIN_LED_VALUE && *blueled != MIN_LED_VALUE) {
+        SetLedState(&BlueLedState);
+    }
 }
 
 // Return with the indx of the value or return UINT8_MAX if the array does not contain the value
