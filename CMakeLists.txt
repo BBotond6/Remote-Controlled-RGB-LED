@@ -20,8 +20,8 @@ enable_testing()
 
 # Add remote_led_functions executable
 add_executable(remote_led_functions
-    UT_RemoteLED.cpp
-    RemoteLED.cpp)
+    test/UT_RemoteLED.cpp
+    src/RemoteLED.cpp)
 target_link_libraries(remote_led_functions
                       PRIVATE GTest::gtest_main)
 
@@ -31,7 +31,8 @@ target_compile_definitions(remote_led_functions
 
 # Include directories for GoogleTest
 target_include_directories(remote_led_functions
-                           PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR})
+                           PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR}
+                           PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}/src/include)
 
 # Include GoogleTest for discover tests
 include(GoogleTest)
