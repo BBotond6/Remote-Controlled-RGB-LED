@@ -1,4 +1,5 @@
 #include <EEPROM.h>
+#include "RemoteLED.hpp"
 
 /////////////////////////////////////Remote controller variables and constans
 #define PHOTOTRANSISTOR      2    //I/O port of the phototransistor.
@@ -493,12 +494,6 @@ uint8_t GetIndexInArray(uint8_t* array, uint8_t size, uint8_t value)
     }
 
     return UINT8_MAX;
-}
-
-// Get EEPROM address from the button index
-uint8_t GetEEPROM_Address(uint8_t index)
-{
-    return (4 * index) + 1;
 }
 
 void ButtonEventManager(uint8_t button)
