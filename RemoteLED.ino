@@ -19,9 +19,6 @@
 //With this mask the modulo division by 8 can be substituted.
 //Note that (NUM % 8) is equivalent to (NUM & 0x07).
 
-#define TRUE    1   //True value
-#define FALSE   0   //False value
-
 #define IR_ON   LOW     //Constants for the states of the phototransistor. The ON and OFF terms refer to
 #define IR_OFF  HIGH    //the IR ray. When the infra LED of the remote controller is ON or OFF.
 
@@ -37,45 +34,9 @@ unsigned long timestamp_reception;      //Timestamp for the beginning of the rec
 
 unsigned long gap_length[NUM_OF_GAPS];  //Time values of the gap lengths in microseconds.
 
-// 1 is the basic led strip remote controller with 24 button
-// 2 is my TV remote controller
-#define REMOTE_CONTROLLER 1
+const uint8_t STORE_BUTTONS[STORE_BUTTONS_SIZE] = {0x10, 0x90, 0x50, 0x30, 0x08, 0x28,
+                                                   0xB0, 0x88, 0xA8, 0x70, 0x48, 0x68};
 
-//size of the store buttons
-uint8_t STORE_BUTTONS_SIZE;
-
-#if REMOTE_CONTROLLER == 1
-    #define RED_BUTTON      0x20 //RED button
-    #define GREEN_BUTTON    0xA0 //GREEN button
-    #define BLUE_BUTTON     0x60 //BLUE button
-    #define ON_OFF_BUTTON   0xC0 //ON button
-    #define SAVE_BUTTON     0xE0 //W button
-    #define LOAD_BUTTON     0xD0 //FLASH button
-    #define CH_UP_BUTTON    0x40 //OFF button
-    #define CH_DOWN_BUTTON  0x80 //ˇ button
-    // Buttons to save and load the LED values
-    uint8_t STORE_BUTTONS[12] = {0x10, 0x90, 0x50, 0x30, 0x08, 0x28, 0xB0, 0x88, 0xA8, 0x70, 0x48, 0x68};
-    //Buttons under the R button:
-    //R-x = 0x10 0x30 0x8 0x28
-    //Buttons under the G button:
-    //G-x = 0x90 0xB0 0x88 0xA8
-    //Buttons under the B button:
-    //B-x = 0x50 0x70 0x48 0x68
-    //Other Buttons:
-    //STROBE = 0xF0
-    //FADE = 0xC8
-    //SMOOTH = 0xE8
-#elif REMOTE_CONTROLLER == 2
-    #define RED_BUTTON       0x98    //Red button code
-    #define GREEN_BUTTON     0x28    //Green button code
-    #define BLUE_BUTTON      0xC8    //Blue button code
-    #define ON_OFF_BUTTON    0x48    //On-Off button code
-    #define SAVE_BUTTON      0x84    //OK button code
-    #define LOAD_BUTTON      0XE7    //AV button code
-    #define CH_UP_BUTTON     0x24    //P+ button code
-    #define CH_DOWN_BUTTON   0xC4    //P- button code
-    uint8_t STORE_BUTTONS[3] = {0x80, 0x40, 0xC0};
-#endif
 /////////////////////////////////////LED variables
 #define RED_LED      9    //Red LED pin
 #define BLUE_LED    11    //Blue LED pin
@@ -150,8 +111,6 @@ void setup()
     }
 
     /////////////////////////////////////LED setup
-    STORE_BUTTONS_SIZE = sizeof(STORE_BUTTONS) / sizeof(STORE_BUTTONS[0]);
-
     pinMode(RED_LED, OUTPUT);
     pinMode(BLUE_LED, OUTPUT);
     pinMode(GREEN_LED, OUTPUT);
@@ -282,17 +241,10 @@ uint8_t GetRemoteSignal()
     return retur;
 }
 
-void SetLedStates(uint8_t state)
-{
-    RedLedState   = state;
-    BlueLedState  = state;
-    GreenLedState = state;
-}
-
 void OnOffButtonEvent()
 {
     if (OnOffButtonState == TRUE) {    //Off state
-        SetLedStates(FALSE);
+        SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
 
         digitalWrite(RED_LED, HIGH_LED);
         digitalWrite(GREEN_LED, HIGH_LED);
@@ -507,12 +459,12 @@ void ButtonEventManager(uint8_t button)
         if (button == SAVE_BUTTON && SaveButtonState == FALSE) {
             SaveButtonState = TRUE;
             LoadButtonState = FALSE;
-            SetLedStates(FALSE);
+            SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
         }
         else if (button == LOAD_BUTTON && LoadButtonState == FALSE) {
             SaveButtonState = FALSE;
             LoadButtonState = TRUE;
-            SetLedStates(FALSE);
+            SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
         }
         else if (SaveButtonState == FALSE && LoadButtonState == FALSE) {
             if (button == RED_BUTTON) {
