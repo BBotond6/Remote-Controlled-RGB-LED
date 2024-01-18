@@ -21,6 +21,7 @@ enable_testing()
 # Add remote_led_functions executable
 add_executable(remote_led_functions
     test/UT_RemoteLED.cpp
+    test/HardwareInterfaceMock.cpp
     src/RemoteLED.cpp)
 target_link_libraries(remote_led_functions
                       PRIVATE GTest::gtest_main)

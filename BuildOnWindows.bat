@@ -6,4 +6,4 @@ cd build
 cmake .. -G "MinGW Makefiles"
 mingw32-make
 cd ..
-.\build\remote_led_functions
+.\build\remote_led_functions --gtest_color=yes

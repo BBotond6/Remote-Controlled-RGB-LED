@@ -37,11 +37,6 @@ unsigned long gap_length[NUM_OF_GAPS];  //Time values of the gap lengths in micr
 const uint8_t STORE_BUTTONS[STORE_BUTTONS_SIZE] = {0x10, 0x90, 0x50, 0x30, 0x08, 0x28,
                                                    0xB0, 0x88, 0xA8, 0x70, 0x48, 0x68};
 
-/////////////////////////////////////LED variables
-#define RED_LED      9    //Red LED pin
-#define BLUE_LED    11    //Blue LED pin
-#define GREEN_LED   10    //Green LED pin
-
 #define LED_DEFAULT_VALUE         200                     //Default value of the LEDs
 #define MAX_LED_VALUE             250                     //Max value of the LEDs
 #define MIN_LED_VALUE               0                     //Min led value of the LEDs (0 is not illuminating)
@@ -49,19 +44,6 @@ const uint8_t STORE_BUTTONS[STORE_BUTTONS_SIZE] = {0x10, 0x90, 0x50, 0x30, 0x08,
 #define MIXED_COLOR_MIN_LED_VALUE  10                     //Min led value of the mixed colors
 
 #define SAVED_COLOR_SIZE    3   //Size of the saved color in bytes -1
-
-// Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
-// If your LED has inverse logic change the values
-#define HIGH_LED    0
-#define LOW_LED     1
-
-uint8_t OnOffButtonState;
-uint8_t SaveButtonState;
-uint8_t LoadButtonState;
-
-uint8_t RedLedState;
-uint8_t BlueLedState;
-uint8_t GreenLedState;
 
 uint8_t RedLedValue;
 uint8_t BlueLedValue;
@@ -115,17 +97,9 @@ void setup()
     pinMode(BLUE_LED, OUTPUT);
     pinMode(GREEN_LED, OUTPUT);
 
-    digitalWrite(RED_LED, HIGH_LED);
-    digitalWrite(BLUE_LED, HIGH_LED);
-    digitalWrite(GREEN_LED, HIGH_LED);
-
-    OnOffButtonState = TRUE;
-    SaveButtonState  = FALSE;
-    LoadButtonState  = FALSE;
-
-    RedLedState   = FALSE;
-    BlueLedState  = FALSE;
-    GreenLedState = FALSE;
+    digitalWrite_fn(RED_LED, HIGH_LED);
+    digitalWrite_fn(BLUE_LED, HIGH_LED);
+    digitalWrite_fn(GREEN_LED, HIGH_LED);
 
     RedLedValue   = 0;
     BlueLedValue  = 0;
@@ -239,20 +213,6 @@ uint8_t GetRemoteSignal()
 
     previous_state = actual_state;    //Shifting the states.
     return retur;
-}
-
-void OnOffButtonEvent()
-{
-    if (OnOffButtonState == TRUE) {    //Off state
-        SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
-
-        digitalWrite(RED_LED, HIGH_LED);
-        digitalWrite(GREEN_LED, HIGH_LED);
-        digitalWrite(BLUE_LED, HIGH_LED);
-
-        SaveButtonState = FALSE;
-        LoadButtonState = FALSE;
-    }
 }
 
 void SetLedState(uint8_t* led)
@@ -435,7 +395,7 @@ void LoadLedFromEEPROM(uint8_t address ,uint8_t* redled, uint8_t* greenled, uint
 }
 
 // Return with the indx of the value or return UINT8_MAX if the array does not contain the value
-uint8_t GetIndexInArray(uint8_t* array, uint8_t size, uint8_t value)
+uint8_t GetIndexInArray(const uint8_t* array, uint8_t size, uint8_t value)
 {
     uint8_t i;
 
@@ -508,24 +468,24 @@ void Illumination()
 {
     if (OnOffButtonState != FALSE) {
         if (illuminate < (RedLedValue / LED_STEP_VALUE)) {
-            digitalWrite(RED_LED, LOW_LED);
+            digitalWrite_fn(RED_LED, LOW_LED);
         }
         else {
-            digitalWrite(RED_LED, HIGH_LED);
+            digitalWrite_fn(RED_LED, HIGH_LED);
         }
 
         if (illuminate < (BlueLedValue / LED_STEP_VALUE)) {
-            digitalWrite(BLUE_LED, LOW_LED);
+            digitalWrite_fn(BLUE_LED, LOW_LED);
         }
         else {
-            digitalWrite(BLUE_LED, HIGH_LED);
+            digitalWrite_fn(BLUE_LED, HIGH_LED);
         }
 
         if (illuminate < (GreenLedValue / LED_STEP_VALUE)) {
-            digitalWrite(GREEN_LED, LOW_LED);
+            digitalWrite_fn(GREEN_LED, LOW_LED);
         }
         else {
-            digitalWrite(GREEN_LED, HIGH_LED);
+            digitalWrite_fn(GREEN_LED, HIGH_LED);
         }
 
         if (illuminate != 25) {

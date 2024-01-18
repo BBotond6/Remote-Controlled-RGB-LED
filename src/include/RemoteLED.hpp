@@ -2,9 +2,9 @@
 #define REMOTE_LED_HPP 
 
 #ifdef UNIT_TEST_CPP
-#include <cstdint>
+#include "../../test/include/HardwareInterfaceMock.hpp"
 #else
-#include <Arduino.h>
+#include "HardwareIntarface.hpp"
 #endif
 
 #define TRUE    1   //True value
@@ -50,8 +50,28 @@
     extern const uint8_t STORE_BUTTONS[3] = {0x80, 0x40, 0xC0};
 #endif
 
+/////////////////////////////////////LED variables
+#define RED_LED      9    //Red LED pin
+#define BLUE_LED    11    //Blue LED pin
+#define GREEN_LED   10    //Green LED pin
+
+// Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
+// If your LED has inverse logic change the values
+#define HIGH_LED    0
+#define LOW_LED     1
+
+extern uint8_t OnOffButtonState;
+extern uint8_t SaveButtonState;
+extern uint8_t LoadButtonState;
+
+extern uint8_t RedLedState;
+extern uint8_t BlueLedState;
+extern uint8_t GreenLedState;
+
 uint8_t GetEEPROM_Address(uint8_t index);
 
 void SetLedStates(uint8_t state, uint8_t* RedLedState, uint8_t* GreenLedState, uint8_t* BlueLedState);
+
+void OnOffButtonEvent();
 
 #endif // REMOTE_LED_HPP
