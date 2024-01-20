@@ -22,6 +22,8 @@
 #define IR_ON   LOW     //Constants for the states of the phototransistor. The ON and OFF terms refer to
 #define IR_OFF  HIGH    //the IR ray. When the infra LED of the remote controller is ON or OFF.
 
+#define SAVED_COLOR_SIZE    3   //Size of the saved color in bytes -1
+
 uint8_t previous_state;         //Global variable of the previous state of the infra communication.
 uint8_t actual_state;           //Global variable of the actual state of the infra communication.
 uint8_t reception_started;      //Flag to signalize that the reception has been started.
@@ -36,18 +38,6 @@ unsigned long gap_length[NUM_OF_GAPS];  //Time values of the gap lengths in micr
 
 const uint8_t STORE_BUTTONS[STORE_BUTTONS_SIZE] = {0x10, 0x90, 0x50, 0x30, 0x08, 0x28,
                                                    0xB0, 0x88, 0xA8, 0x70, 0x48, 0x68};
-
-#define LED_DEFAULT_VALUE         200                     //Default value of the LEDs
-#define MAX_LED_VALUE             250                     //Max value of the LEDs
-#define MIN_LED_VALUE               0                     //Min led value of the LEDs (0 is not illuminating)
-#define LED_STEP_VALUE             10                     //Value of one step
-#define MIXED_COLOR_MIN_LED_VALUE  10                     //Min led value of the mixed colors
-
-#define SAVED_COLOR_SIZE    3   //Size of the saved color in bytes -1
-
-uint8_t RedLedValue;
-uint8_t BlueLedValue;
-uint8_t GreenLedValue;
 
 uint8_t illuminate;
 
@@ -100,10 +90,6 @@ void setup()
     digitalWrite_fn(RED_LED, HIGH_LED);
     digitalWrite_fn(BLUE_LED, HIGH_LED);
     digitalWrite_fn(GREEN_LED, HIGH_LED);
-
-    RedLedValue   = 0;
-    BlueLedValue  = 0;
-    GreenLedValue = 0;
 
     illuminate = 0;
 
@@ -215,54 +201,6 @@ uint8_t GetRemoteSignal()
     return retur;
 }
 
-void SetLedState(uint8_t* led)
-{
-    RedLedState   = FALSE;
-    BlueLedState  = FALSE;
-    GreenLedState = FALSE;
-    *led          = TRUE;
-}
-
-uint8_t GetActiveLedNumber()
-{
-    uint8_t ActiveLedNumber = 0;
-    if (RedLedValue != 0) {
-        ActiveLedNumber++;
-    }
-
-    if (BlueLedValue != 0) {
-        ActiveLedNumber++;
-    }
-
-    if (GreenLedValue != 0) {
-        ActiveLedNumber++;
-    }
-
-    return ActiveLedNumber;
-}
-
-uint8_t** GetActiveLedPointers(){
-    uint8_t** pointers = (uint8_t**)malloc(GetActiveLedNumber() * sizeof(uint8_t*));
-    uint8_t   index    = 0;
-
-    if (RedLedValue != 0) {
-        pointers[index] = &RedLedValue;
-        index++;
-    }
-
-    if (BlueLedValue != 0) {
-        pointers[index] = &BlueLedValue;
-        index++;
-    }
-
-    if (GreenLedValue != 0) {
-        pointers[index] = &GreenLedValue;
-        index++;
-    }
-
-    return pointers;
-}
-
 void SetOneLedValue(uint8_t* led, uint8_t mode)
 {
     if (mode == TRUE && *led > (MAX_LED_VALUE - LED_STEP_VALUE)) {
@@ -332,7 +270,7 @@ void SetColorValues(uint8_t mode)
         }
     }
 
-    free(LedPointers);
+    delete[] LedPointers;
 }
 
 void SetLedValue(uint8_t mode)
@@ -419,12 +357,12 @@ void ButtonEventManager(uint8_t button)
         if (button == SAVE_BUTTON && SaveButtonState == FALSE) {
             SaveButtonState = TRUE;
             LoadButtonState = FALSE;
-            SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
+            SetLedStates(FALSE);
         }
         else if (button == LOAD_BUTTON && LoadButtonState == FALSE) {
             SaveButtonState = FALSE;
             LoadButtonState = TRUE;
-            SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
+            SetLedStates(FALSE);
         }
         else if (SaveButtonState == FALSE && LoadButtonState == FALSE) {
             if (button == RED_BUTTON) {

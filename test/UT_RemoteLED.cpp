@@ -6,21 +6,108 @@
 #include "RemoteLED.hpp"
 
 TEST(GetEEPROM_Address_TEST, RemoteLED) {
-  EXPECT_EQ(GetEEPROM_Address(2), 9);
-  EXPECT_NE(GetEEPROM_Address(2), 10);
-  EXPECT_NE(GetEEPROM_Address(2), 8);
+  uint8_t TestNumber = 2;
+  EXPECT_EQ(GetEEPROM_Address(TestNumber), (TestNumber * COLOR_EEPROM_ALLOCATION_SIZE) + 1);
+  EXPECT_NE(GetEEPROM_Address(TestNumber), (TestNumber * COLOR_EEPROM_ALLOCATION_SIZE) + 2);
+  EXPECT_NE(GetEEPROM_Address(TestNumber), TestNumber * COLOR_EEPROM_ALLOCATION_SIZE);
+}
+
+TEST(SetLedState_TEST, RemoteLED) {
+  SetLedStates(TRUE);
+  RedLedState = FALSE;
+  SetLedState(&RedLedState);
+  EXPECT_EQ(TRUE, RedLedState);
+  EXPECT_EQ(FALSE, GreenLedState);
+  EXPECT_EQ(FALSE, BlueLedState);
+
+  SetLedStates(TRUE);
+  GreenLedState = FALSE;
+  SetLedState(&GreenLedState);
+  EXPECT_EQ(FALSE, RedLedState);
+  EXPECT_EQ(TRUE, GreenLedState);
+  EXPECT_EQ(FALSE, BlueLedState);
+
+  SetLedStates(TRUE);
+  BlueLedState  = FALSE;
+  SetLedState(&BlueLedState);
+  EXPECT_EQ(FALSE, RedLedState);
+  EXPECT_EQ(FALSE, GreenLedState);
+  EXPECT_EQ(TRUE, BlueLedState);
 }
 
 TEST(SetLedStates_TEST, RemoteLED) {
-  SetLedStates(TRUE, &RedLedState, &GreenLedState, &BlueLedState);
+  RedLedState   = FALSE;
+  BlueLedState  = FALSE;
+  GreenLedState = FALSE;
+
+  SetLedStates(TRUE);
   EXPECT_EQ(TRUE, RedLedState);
   EXPECT_EQ(TRUE, GreenLedState);
   EXPECT_EQ(TRUE, BlueLedState);
 
-  SetLedStates(FALSE, &RedLedState, &GreenLedState, &BlueLedState);
+  SetLedStates(FALSE);
   EXPECT_EQ(FALSE, RedLedState);
   EXPECT_EQ(FALSE, GreenLedState);
   EXPECT_EQ(FALSE, BlueLedState);
+}
+
+TEST(GetActiveLedNumber_TEST, RemoteLED) {
+  for (RedLedValue = MIN_LED_VALUE; RedLedValue <= MIN_LED_VALUE + 1; RedLedValue++) {
+    for (GreenLedValue = MIN_LED_VALUE; GreenLedValue <= MIN_LED_VALUE + 1; GreenLedValue++) {
+      for (BlueLedValue = MIN_LED_VALUE; BlueLedValue <= MIN_LED_VALUE + 1; BlueLedValue++) {
+        EXPECT_EQ(GetActiveLedNumber(), (RedLedValue + GreenLedValue + BlueLedValue) - (MIN_LED_VALUE * 3));
+      }
+    }
+  }
+}
+
+TEST(GetActiveLedPointers_TEST, RemoteLED) {
+  for (RedLedValue = MIN_LED_VALUE; RedLedValue <= MIN_LED_VALUE + 1; RedLedValue++) {
+    for (GreenLedValue = MIN_LED_VALUE; GreenLedValue <= MIN_LED_VALUE + 1; GreenLedValue++) {
+      for (BlueLedValue = MIN_LED_VALUE; BlueLedValue <= MIN_LED_VALUE + 1; BlueLedValue++) {
+        uint8_t** pointers = GetActiveLedPointers();
+
+        if (GetActiveLedNumber() == 0) {
+          EXPECT_EQ(pointers[0], nullptr);
+        }
+        else if (GetActiveLedNumber() == 1) {
+          if (RedLedValue) {
+            EXPECT_EQ(pointers[0], &RedLedValue);
+          }
+          else if (GreenLedValue) {
+            EXPECT_EQ(pointers[0], &GreenLedValue);
+          }
+          else {
+            EXPECT_EQ(pointers[0], &BlueLedValue);
+          }
+          EXPECT_EQ(pointers[1], nullptr);
+        }
+        else if (GetActiveLedNumber() == 2) {
+          if (!RedLedValue) {
+            EXPECT_EQ(pointers[0], &GreenLedValue);
+            EXPECT_EQ(pointers[1], &BlueLedValue);
+          }
+          else if (!GreenLedValue) {
+            EXPECT_EQ(pointers[0], &RedLedValue);
+            EXPECT_EQ(pointers[1], &BlueLedValue);
+          }
+          else {
+            EXPECT_EQ(pointers[0], &RedLedValue);
+            EXPECT_EQ(pointers[1], &GreenLedValue);
+          }
+          EXPECT_EQ(pointers[2], nullptr);
+        }
+        else {
+          EXPECT_EQ(pointers[0], &RedLedValue);
+          EXPECT_EQ(pointers[1], &GreenLedValue);
+          EXPECT_EQ(pointers[2], &BlueLedValue);
+          EXPECT_EQ(pointers[3], nullptr);
+        }
+
+        delete[] pointers;
+      }
+    }
+  }
 }
 
 TEST(OnOffButtonEvent_TEST, RemoteLED) {

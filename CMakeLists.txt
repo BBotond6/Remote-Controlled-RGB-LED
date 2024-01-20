@@ -6,6 +6,9 @@ project(RemoteLED)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Set the CMP0135 policy to NEW
+cmake_policy(SET CMP0135 NEW)
+
 # Include GoogleTest as an external project
 include(FetchContent)
 FetchContent_Declare(

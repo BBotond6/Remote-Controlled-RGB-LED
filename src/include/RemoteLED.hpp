@@ -55,6 +55,14 @@
 #define BLUE_LED    11    //Blue LED pin
 #define GREEN_LED   10    //Green LED pin
 
+#define LED_DEFAULT_VALUE         200                     //Default value of the LEDs
+#define MAX_LED_VALUE             250                     //Max value of the LEDs
+#define MIN_LED_VALUE               0                     //Min led value of the LEDs (0 is not illuminating)
+#define LED_STEP_VALUE             10                     //Value of one step
+#define MIXED_COLOR_MIN_LED_VALUE  10                     //Min led value of the mixed colors
+
+#define COLOR_EEPROM_ALLOCATION_SIZE 4
+
 // Default: HIGH_LED (1) is not illuminate, LOW_LED (0) is illuminate
 // If your LED has inverse logic change the values
 #define HIGH_LED    0
@@ -68,9 +76,19 @@ extern uint8_t RedLedState;
 extern uint8_t BlueLedState;
 extern uint8_t GreenLedState;
 
+extern uint8_t RedLedValue;
+extern uint8_t BlueLedValue;
+extern uint8_t GreenLedValue;
+
 uint8_t GetEEPROM_Address(uint8_t index);
 
-void SetLedStates(uint8_t state, uint8_t* RedLedState, uint8_t* GreenLedState, uint8_t* BlueLedState);
+void SetLedState(uint8_t* led);
+
+void SetLedStates(uint8_t state);
+
+uint8_t GetActiveLedNumber();
+
+uint8_t** GetActiveLedPointers();
 
 void OnOffButtonEvent();
 
