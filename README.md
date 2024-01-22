@@ -6,7 +6,7 @@ The primary goal was to enable users to control individual color channels and sa
 
 ## Legacy Description
 
-For those interested in the original project and its features, the legacy description is available in [PrevREADME.md](./PrevREADME.md).
+For those interested in the original project and its features, the legacy description is available in [LegacyREADME.md](./LegacyREADME.md).
 
 ## Updates
 
@@ -16,9 +16,13 @@ allowing users to save and recall more colors from the EEPROM effortlessly.
 One notable improvement is the ability to adjust the brightness not only for individual colours, but also for saved colour profiles containing more than one colour.
 Currently the project is used to control a 12V RGB LED strip.
 
-## Schematic drawing for RGB LED strip
+Example picture of the used remote controller:
 
+![arduino_remote](https://github.com/BBotond6/Remote-Controlled-RGB-LED/assets/102668658/d1b30b79-7008-4ec7-8446-b6668d855b49)
 
+## Schematic drawing of RGB LED strip
+
+![arduino](https://github.com/BBotond6/Remote-Controlled-RGB-LED/assets/102668658/46367113-da4e-4207-b0a3-55ae1a4ec4d5)
 
 ## Project Structure and Unit Testing
 
