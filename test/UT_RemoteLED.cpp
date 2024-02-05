@@ -110,6 +110,179 @@ TEST(GetActiveLedPointers_TEST, RemoteLED) {
   }
 }
 
+TEST(SetOneLedValue_TEST, RemoteLED) {
+  // Mode TRUE case
+  RedLedValue   = MIN_LED_VALUE;
+  GreenLedValue = MIN_LED_VALUE;
+  BlueLedValue  = MIN_LED_VALUE;
+  SetOneLedValue(&RedLedValue, TRUE);
+  EXPECT_EQ(RedLedValue, MIN_LED_VALUE + LED_STEP_VALUE);
+  EXPECT_EQ(GreenLedValue, MIN_LED_VALUE);
+  EXPECT_EQ(BlueLedValue, MIN_LED_VALUE);
+
+  // Mode FALSE case
+  RedLedValue   = MAX_LED_VALUE;
+  GreenLedValue = MIN_LED_VALUE;
+  BlueLedValue  = MIN_LED_VALUE;
+  SetOneLedValue(&RedLedValue, FALSE);
+  EXPECT_EQ(RedLedValue, MAX_LED_VALUE - LED_STEP_VALUE);
+  EXPECT_EQ(GreenLedValue, MIN_LED_VALUE);
+  EXPECT_EQ(BlueLedValue, MIN_LED_VALUE);
+
+  // Mode TRUE case when LedValue is bigger then MAX_LED_VALUE - LED_STEP_VALUE
+  RedLedValue   = MAX_LED_VALUE - 1;
+  GreenLedValue = MIN_LED_VALUE;
+  BlueLedValue  = MIN_LED_VALUE;
+  SetOneLedValue(&RedLedValue, TRUE);
+  EXPECT_EQ(RedLedValue, MAX_LED_VALUE);
+  EXPECT_EQ(GreenLedValue, MIN_LED_VALUE);
+  EXPECT_EQ(BlueLedValue, MIN_LED_VALUE);
+
+  // Mode FALSE case when LedValue is smaller then MIN_LED_VALUE + LED_STEP_VALUE
+  RedLedValue   = MIN_LED_VALUE + 1;
+  GreenLedValue = MIN_LED_VALUE;
+  BlueLedValue  = MIN_LED_VALUE;
+  SetOneLedValue(&RedLedValue, FALSE);
+  EXPECT_EQ(RedLedValue, MIN_LED_VALUE);
+  EXPECT_EQ(GreenLedValue, MIN_LED_VALUE);
+  EXPECT_EQ(BlueLedValue, MIN_LED_VALUE);
+}
+
+TEST(SetColorValues_TEST, RemoteLED) {
+  uint8_t* led1;
+  uint8_t* led2;
+  uint8_t* led3;
+  uint8_t  RedLedActive;
+  uint8_t  GreenLedActive;
+  uint8_t  BlueLedActive;
+  uint8_t  TestLedValue1 = 210;
+  uint8_t  TestLedValue2 =  20;
+  uint8_t  TestLedValue3 =  80;
+
+  // 2 active LED
+  for (RedLedActive = 0; RedLedActive < 2; RedLedActive++) {
+    for (GreenLedActive = 0; GreenLedActive < 2; GreenLedActive++) {
+      for (BlueLedActive = 0; BlueLedActive < 2; BlueLedActive++) {
+
+        if (RedLedActive + GreenLedActive + BlueLedActive == 2) {
+          if (RedLedActive && GreenLedActive && !BlueLedActive) {
+            led1 = &RedLedValue;
+            led2 = &GreenLedValue;
+            led3 = &BlueLedValue;
+          }
+          else if (RedLedActive && !GreenLedActive && BlueLedActive){
+            led1 = &BlueLedValue;
+            led2 = &RedLedValue;
+            led3 = &GreenLedValue;
+          }
+          else {
+            led1 = &GreenLedValue;
+            led2 = &BlueLedValue;
+            led3 = &RedLedValue;
+          }
+
+          // TRUE case
+          *led1 = TestLedValue1;
+          *led2 = TestLedValue2;
+          *led3 = MIN_LED_VALUE;
+          SetColorValues(TRUE);
+          EXPECT_EQ(*led1, TestLedValue1 + LED_STEP_VALUE);
+          EXPECT_EQ(*led2, round(((float)*led1 / (float)TestLedValue1) * TestLedValue2));
+          EXPECT_EQ(*led3, MIN_LED_VALUE);
+
+          // FALSE case
+          *led1 = TestLedValue1;
+          *led2 = TestLedValue2;
+          *led3 = MIN_LED_VALUE;
+          SetColorValues(FALSE);
+          EXPECT_EQ(*led1, round(((float)*led2 / (float)TestLedValue2) * TestLedValue1));
+          EXPECT_EQ(*led2, TestLedValue2 - LED_STEP_VALUE);
+          EXPECT_EQ(*led3, MIN_LED_VALUE);
+
+          // TRUE case when *led1 bigger then MAX_LED_VALUE + LED_STEP_VALUE
+          *led1 = MAX_LED_VALUE - LED_STEP_VALUE + 1;
+          *led2 = TestLedValue1;
+          *led3 = MIN_LED_VALUE;
+          SetColorValues(TRUE);
+          EXPECT_EQ(*led1, MAX_LED_VALUE);
+          EXPECT_EQ(*led2, round(((float)MAX_LED_VALUE / (float)(MAX_LED_VALUE - LED_STEP_VALUE + 1))
+                    * TestLedValue1));
+          EXPECT_EQ(*led3, MIN_LED_VALUE);
+
+          // FALSE case when *led1 smaller then MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE
+          *led1 = MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE - 1;
+          *led2 = TestLedValue1;
+          *led3 = MIN_LED_VALUE;
+          SetColorValues(FALSE);
+          EXPECT_EQ(*led1, MIXED_COLOR_MIN_LED_VALUE);
+          EXPECT_EQ(*led2, round(((float)MIXED_COLOR_MIN_LED_VALUE /
+                    (float)(MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE - 1)) * TestLedValue1));
+          EXPECT_EQ(*led3, MIN_LED_VALUE);
+        }
+      }
+    }
+  }
+
+  // 3 LED active
+  for (RedLedActive = 0; RedLedActive < LED_NUMBER; RedLedActive++) {
+    if (RedLedActive == 0) {
+      led1 = &RedLedValue;
+      led2 = &GreenLedValue;
+      led3 = &BlueLedValue;
+    }
+    else if (RedLedActive == 1){
+      led1 = &BlueLedValue;
+      led2 = &RedLedValue;
+      led3 = &GreenLedValue;
+    }
+    else {
+      led1 = &GreenLedValue;
+      led2 = &BlueLedValue;
+      led3 = &RedLedValue;
+    }
+
+    // TRUE case
+    *led1 = TestLedValue1;
+    *led2 = TestLedValue2;
+    *led3 = TestLedValue3;
+    SetColorValues(TRUE);
+    EXPECT_EQ(*led1, TestLedValue1 + LED_STEP_VALUE);
+    EXPECT_EQ(*led2, round(((float)*led1 / (float)TestLedValue1) * TestLedValue2));
+    EXPECT_EQ(*led3, round(((float)*led1 / (float)TestLedValue1) * TestLedValue3));
+
+    // FALSE case
+    *led1 = TestLedValue1;
+    *led2 = TestLedValue2;
+    *led3 = TestLedValue3;
+    SetColorValues(FALSE);
+    EXPECT_EQ(*led1, round(((float)*led2 / (float)TestLedValue2) * TestLedValue1));
+    EXPECT_EQ(*led2, TestLedValue2 - LED_STEP_VALUE);
+    EXPECT_EQ(*led3, round(((float)*led2 / (float)TestLedValue2) * TestLedValue3));
+
+    // TRUE case when *led1 bigger then MAX_LED_VALUE + LED_STEP_VALUE
+    *led1 = MAX_LED_VALUE - LED_STEP_VALUE + 1;
+    *led2 = TestLedValue1;
+    *led3 = TestLedValue3;
+    SetColorValues(TRUE);
+    EXPECT_EQ(*led1, MAX_LED_VALUE);
+    EXPECT_EQ(*led2, round(((float)MAX_LED_VALUE / (float)(MAX_LED_VALUE - LED_STEP_VALUE + 1))
+              * TestLedValue1));
+    EXPECT_EQ(*led3, round(((float)MAX_LED_VALUE / (float)(MAX_LED_VALUE - LED_STEP_VALUE + 1))
+              * TestLedValue3));
+
+    // FALSE case when *led1 smaller then MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE
+    *led1 = MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE - 1;
+    *led2 = TestLedValue1;
+    *led3 = TestLedValue3;
+    SetColorValues(FALSE);
+    EXPECT_EQ(*led1, MIXED_COLOR_MIN_LED_VALUE);
+    EXPECT_EQ(*led2, round(((float)MIXED_COLOR_MIN_LED_VALUE /
+              (float)(MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE - 1)) * TestLedValue1));
+    EXPECT_EQ(*led3, round(((float)MIXED_COLOR_MIN_LED_VALUE /
+              (float)(MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE - 1)) * TestLedValue3));
+  }
+}
+
 TEST(OnOffButtonEvent_TEST, RemoteLED) {
   OnOffButtonState                  = TRUE;
   SaveButtonState                   = TRUE;

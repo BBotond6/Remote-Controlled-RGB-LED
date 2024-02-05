@@ -2,6 +2,7 @@
 #define REMOTE_LED_HPP 
 
 #ifdef UNIT_TEST_CPP
+#include <cmath>
 #include "../../test/include/HardwareInterfaceMock.hpp"
 #else
 #include "HardwareIntarface.hpp"
@@ -89,6 +90,10 @@ void SetLedStates(uint8_t state);
 uint8_t GetActiveLedNumber();
 
 uint8_t** GetActiveLedPointers();
+
+void SetOneLedValue(uint8_t* led, uint8_t mode);
+
+void SetColorValues(uint8_t mode);
 
 void OnOffButtonEvent();
 

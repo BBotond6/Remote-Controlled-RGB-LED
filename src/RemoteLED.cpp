@@ -74,6 +74,78 @@ uint8_t** GetActiveLedPointers()
     return pointers;
 }
 
+void SetOneLedValue(uint8_t* led, uint8_t mode)
+{
+    if (mode == TRUE && *led > (MAX_LED_VALUE - LED_STEP_VALUE)) {
+        *led = MAX_LED_VALUE;
+    }
+    else if (mode == TRUE && *led != MAX_LED_VALUE) {
+        *led += LED_STEP_VALUE;
+    }
+    else if (mode == FALSE && *led < (MIN_LED_VALUE + LED_STEP_VALUE)) {
+        *led = MIN_LED_VALUE;
+    }
+    else if (mode == FALSE && *led != MIN_LED_VALUE) {
+        *led -= LED_STEP_VALUE;
+    }
+}
+
+void SetColorValues(uint8_t mode)
+{
+    uint8_t   i;
+    float     ratio;
+    uint8_t   ReferenceLedValue = 0;
+    uint8_t   ReferenceIndex    = 0;
+    uint8_t** LedPointers       = GetActiveLedPointers();
+    uint8_t   ActiveLedNumber   = GetActiveLedNumber();
+
+    if (mode) {
+        for (i = 0; i < ActiveLedNumber; i++) {
+            if (*LedPointers[i] > ReferenceLedValue) {
+                ReferenceLedValue = *LedPointers[i];
+                ReferenceIndex    = i;
+            }
+        }
+
+        if (*LedPointers[ReferenceIndex] > (MAX_LED_VALUE - LED_STEP_VALUE)) {
+            ReferenceLedValue = MAX_LED_VALUE;
+        }
+        else {
+            ReferenceLedValue = *LedPointers[ReferenceIndex] + LED_STEP_VALUE;
+        }
+
+        ratio = (float)((float)ReferenceLedValue / (float)(*LedPointers[ReferenceIndex]));
+    }
+    else {
+        ReferenceLedValue = UINT8_MAX;
+        for (i = 0; i < ActiveLedNumber; i++) {
+            if (*LedPointers[i] < ReferenceLedValue) {
+                ReferenceLedValue = *LedPointers[i];
+                ReferenceIndex    = i;
+            }
+        }
+
+        if (*LedPointers[ReferenceIndex] < (MIXED_COLOR_MIN_LED_VALUE + LED_STEP_VALUE)) {
+            ReferenceLedValue = MIXED_COLOR_MIN_LED_VALUE;
+        }
+        else {
+            ReferenceLedValue = *LedPointers[ReferenceIndex] - LED_STEP_VALUE;
+        }
+
+        ratio = (float)((float)ReferenceLedValue / (float)(*LedPointers[ReferenceIndex]));
+    }
+
+    *LedPointers[ReferenceIndex] = ReferenceLedValue;
+
+    for (i = 0; i < ActiveLedNumber; i++) {
+        if (i != ReferenceIndex) {
+            *LedPointers[i] = (uint8_t)round((float)(*LedPointers[i]) * ratio);
+        }
+    }
+
+    delete[] LedPointers;
+}
+
 void OnOffButtonEvent()
 {
     if (OnOffButtonState == TRUE) {    //Off state
