@@ -146,6 +146,25 @@ void SetColorValues(uint8_t mode)
     delete[] LedPointers;
 }
 
+void SetLedValue(uint8_t mode)
+{
+    if (RedLedState == TRUE || BlueLedState == TRUE || GreenLedState == TRUE) {
+
+        if (RedLedState == TRUE) {
+            SetOneLedValue(&RedLedValue, mode);
+        }
+        else if (GreenLedState == TRUE) {
+            SetOneLedValue(&GreenLedValue, mode);
+        }
+        else if (BlueLedState == TRUE) {
+            SetOneLedValue(&BlueLedValue, mode);
+        }
+    }
+    else if(GetActiveLedNumber() > 1) {
+        SetColorValues(mode);
+    }
+}
+
 void OnOffButtonEvent()
 {
     if (OnOffButtonState == TRUE) {    //Off state

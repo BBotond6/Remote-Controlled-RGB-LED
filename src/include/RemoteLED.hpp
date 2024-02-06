@@ -95,6 +95,8 @@ void SetOneLedValue(uint8_t* led, uint8_t mode);
 
 void SetColorValues(uint8_t mode);
 
+void SetLedValue(uint8_t mode);
+
 void OnOffButtonEvent();
 
 #endif // REMOTE_LED_HPP

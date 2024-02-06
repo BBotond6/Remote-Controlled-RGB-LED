@@ -201,25 +201,6 @@ uint8_t GetRemoteSignal()
     return retur;
 }
 
-void SetLedValue(uint8_t mode)
-{
-    if (RedLedState == TRUE || BlueLedState == TRUE || GreenLedState == TRUE) {
-
-        if (RedLedState == TRUE) {
-            SetOneLedValue(&RedLedValue, mode);
-        }
-        else if (BlueLedState == TRUE) {
-            SetOneLedValue(&BlueLedValue, mode);
-        }
-        else if (GreenLedState == TRUE) {
-            SetOneLedValue(&GreenLedValue, mode);
-        }
-    }
-    else if(GetActiveLedNumber() > 1) {
-        SetColorValues(mode);
-    }
-}
-
 void SaveLedToEEPROM(uint8_t address, uint8_t redled, uint8_t greenled, uint8_t blueled)
 {
     if (address > 0 && address <= 60) {

@@ -283,6 +283,84 @@ TEST(SetColorValues_TEST, RemoteLED) {
   }
 }
 
+TEST(SetLedValue_TEST, RemoteLED) {
+  uint8_t mode;
+  uint8_t RedLedActive;
+  uint8_t GreenLedActive;
+  uint8_t BlueLedActive;
+
+  for (mode = 0; mode <= 1; mode++) {
+    for (RedLedActive = 0; RedLedActive <= 1; RedLedActive++) {
+      for (GreenLedActive = 0; GreenLedActive <= 1; GreenLedActive++) {
+        for (BlueLedActive = 0; BlueLedActive <= 1; BlueLedActive++) {
+          uint8_t RedTestLedValue   = 210;
+          uint8_t GreenTestLedValue =  20;
+          uint8_t BlueTestLedValue  =  80;
+
+          RedLedState   = FALSE;
+          GreenLedState = FALSE;
+          BlueLedState  = FALSE;
+
+          RedLedValue   = RedLedActive   * RedTestLedValue;
+          GreenLedValue = GreenLedActive * GreenTestLedValue;
+          BlueLedValue  = BlueLedActive  * BlueTestLedValue;
+
+          if (RedLedActive && !GreenLedActive && !BlueLedActive) {
+            RedLedState = TRUE;
+            SetLedValue(mode);
+            SetOneLedValue(&RedTestLedValue, mode);
+            EXPECT_EQ(RedLedValue, RedTestLedValue);
+            EXPECT_EQ(GreenLedValue, MIN_LED_VALUE);
+            EXPECT_EQ(BlueLedValue, MIN_LED_VALUE);
+          }
+          else if (!RedLedActive && GreenLedActive && !BlueLedActive) {
+            GreenLedState = TRUE;
+            SetLedValue(mode);
+            SetOneLedValue(&GreenTestLedValue, mode);
+            EXPECT_EQ(RedLedValue, MIN_LED_VALUE);
+            EXPECT_EQ(GreenLedValue, GreenTestLedValue);
+            EXPECT_EQ(BlueLedValue, MIN_LED_VALUE);
+          }
+          else if (!RedLedActive && !GreenLedActive && BlueLedActive) {
+            BlueLedState = TRUE;
+            SetLedValue(mode);
+            SetOneLedValue(&BlueTestLedValue, mode);
+            EXPECT_EQ(RedLedValue, MIN_LED_VALUE);
+            EXPECT_EQ(GreenLedValue, MIN_LED_VALUE);
+            EXPECT_EQ(BlueLedValue, BlueTestLedValue);
+          }
+          else if (RedLedActive + GreenLedActive + BlueLedActive > 1) {
+            SetLedValue(mode);
+
+            RedLedValue     += RedTestLedValue;
+            RedTestLedValue  = RedLedValue - RedTestLedValue;
+            RedLedValue     -= RedTestLedValue;
+            RedLedValue     *= RedLedActive;
+            RedTestLedValue *= RedLedActive;
+
+            GreenLedValue     += GreenTestLedValue;
+            GreenTestLedValue  = GreenLedValue - GreenTestLedValue;
+            GreenLedValue     -= GreenTestLedValue;
+            GreenLedValue     *= GreenLedActive;
+            GreenTestLedValue *= GreenLedActive;
+
+            BlueLedValue     += BlueTestLedValue;
+            BlueTestLedValue  = BlueLedValue - BlueTestLedValue;
+            BlueLedValue     -= BlueTestLedValue;
+            BlueLedValue     *= BlueLedActive;
+            BlueTestLedValue *= BlueLedActive;
+
+            SetColorValues(mode);
+            EXPECT_EQ(RedLedValue, RedTestLedValue);
+            EXPECT_EQ(GreenLedValue, GreenTestLedValue);
+            EXPECT_EQ(BlueLedValue, BlueTestLedValue);
+          }
+        }
+      }
+    }
+  }
+}
+
 TEST(OnOffButtonEvent_TEST, RemoteLED) {
   OnOffButtonState                  = TRUE;
   SaveButtonState                   = TRUE;
