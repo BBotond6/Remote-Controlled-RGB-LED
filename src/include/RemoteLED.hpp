@@ -99,4 +99,6 @@ void SetLedValue(uint8_t mode);
 
 void OnOffButtonEvent();
 
+uint8_t GetIndexInArray(const uint8_t* array, uint8_t size, uint8_t value);
+
 #endif // REMOTE_LED_HPP

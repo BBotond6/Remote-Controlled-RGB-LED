@@ -241,20 +241,6 @@ void LoadLedFromEEPROM(uint8_t address ,uint8_t* redled, uint8_t* greenled, uint
     }
 }
 
-// Return with the indx of the value or return UINT8_MAX if the array does not contain the value
-uint8_t GetIndexInArray(const uint8_t* array, uint8_t size, uint8_t value)
-{
-    uint8_t i;
-
-    for (i = 0; i < size; i++) {
-        if (value == array[i]) {
-            return i;
-        }
-    }
-
-    return UINT8_MAX;
-}
-
 void ButtonEventManager(uint8_t button)
 {
     if (button == ON_OFF_BUTTON) {

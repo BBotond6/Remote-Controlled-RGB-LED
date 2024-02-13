@@ -390,3 +390,22 @@ TEST(OnOffButtonEvent_TEST, RemoteLED) {
   EXPECT_EQ(SaveButtonState, TRUE);
   EXPECT_EQ(LoadButtonState, TRUE);
 }
+
+TEST(GetIndexInArray_TEST, RemoteLED) {
+  const uint8_t ArraySize = UINT8_MAX / 2;
+  uint8_t TestArray[ArraySize];
+  uint8_t i;
+
+  for (i = 0; i < ArraySize; i++) {
+    TestArray[i] = i;
+  }
+
+  for (i = 0; i < UINT8_MAX; i++) {
+    if (i < ArraySize) {
+      EXPECT_EQ(GetIndexInArray(TestArray, ArraySize, i), i);
+    }
+    else {
+      EXPECT_EQ(GetIndexInArray(TestArray, ArraySize, i), UINT8_MAX);
+    }
+  }
+}
