@@ -81,6 +81,11 @@ extern uint8_t RedLedValue;
 extern uint8_t BlueLedValue;
 extern uint8_t GreenLedValue;
 
+extern const uint8_t CRC_8_TABLE[256];
+
+//Memory protection
+uint8_t Calc_CRC_8(uint8_t  DataArray[], uint16_t Length);
+
 uint8_t GetEEPROM_Address(uint8_t index);
 
 void SetLedState(uint8_t* led);

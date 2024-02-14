@@ -5,6 +5,26 @@
 #include <gtest/gtest.h>
 #include "RemoteLED.hpp"
 
+TEST(Calc_CRC_8_TEST, RemoteLED) {
+  uint8_t i;
+  uint8_t j;
+  uint8_t TestColors[3];
+  uint8_t TestColorLength = sizeof(TestColors) / sizeof(TestColors[0]);
+
+  for (i = 0; i <= MAX_LED_VALUE - 20; i++) {
+    for (j = 0; j < TestColorLength; j++) {
+      TestColors[j] = i + (j * 10);
+    }
+
+    uint8_t ExpectedCRC = 0;
+    for (j = 0; j < TestColorLength; j++) {
+        ExpectedCRC = CRC_8_TABLE[ExpectedCRC ^ TestColors[j]];
+    }
+
+    EXPECT_EQ(Calc_CRC_8(TestColors, TestColorLength), ExpectedCRC);
+  }
+}
+
 TEST(GetEEPROM_Address_TEST, RemoteLED) {
   uint8_t TestNumber = 2;
   EXPECT_EQ(GetEEPROM_Address(TestNumber), (TestNumber * COLOR_EEPROM_ALLOCATION_SIZE) + 1);
